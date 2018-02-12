@@ -187,6 +187,64 @@ data[(!is.na(data$Age)),]
 # ggplot(data = data[(!is.na(data$Age)) & row(data[, 'Age']) <= 891, ], aes(x = Age, color=Survived)) + 
 #   geom_line(aes(label=..count..), stat = 'bin', binwidth=5)  + 
 #   labs(title = "How Age impact survivor", x = "Age", y = "Count", fill = "Survived")
+liveAge=sqldf("select count(Age) as num,Age from data where Survived=1 group by Age")
+deadAge=sqldf("select count(Age) as num, Age from data where Survived=0 group by Age")
+plot(density(deadAge$Age))
+polygon(density(liveAge$Age), col=rgb(1,1,0,0.4), border="blue", lwd=2) 
+polygon(density(deadAge$Age), col=rgb(1,0,1,0.4), border="red", lwd=2) 
  
-
-
+# 配偶和兄弟数量的关系
+ggplot(data = data[1:nrow(train),], mapping = aes(x = SibSp, y = ..count.., fill=Survived)) +
+  geom_bar(stat = 'count', position='dodge') +
+  labs(title = "How SibSp impact survivor", x = "Sibsp", y = "Count", fill = "Survived") 
+  # geom_text(stat = "count", aes(label = ..count..), position=position_dodge(width=1),   vjust=-0.5,
+  #           theme(plot.title = element_text(hjust = 0.5), legend.position="bottom")
+ 
+sibLive=sqldf("select count(Sibsp) as live,Sibsp from data where Survived=1 group by SibSp ")
+sibLive
+sibDead=sqldf("select count(Sibsp) as dead,Sibsp from data where Survived=0 group by SibSp ")
+sibDead
+totalSib=sqldf("select sibLive.live, sibDead.dead,sibDead.SibSp from sibDead left outer join sibLive on sibLive.SibSp=sibDead.SibSp")
+barplot(t(data.frame(totalSib$live,totalSib$dead)),beside = T,col= c(rgb(1,0,1,0.2),rgb(1,1,0,0.2)),  axes = TRUE, axisnames = TRUE)
+legend(
+  "topright",
+  legend = c("Survived", "Dead"),
+  fill =   c(rgb(1,0,1,0.2),rgb(1,1,0,0.2)),
+  box.col = "transparent"
+)
+ 
+ 
+title("Relationship between sib and survived",xlab = " sib num",ylab="count")
+box()
+#  父母子女数量的关系
+parchLive=sqldf("select count(Parch) as num, Parch from data where Survived=1 group by Parch")
+parchLive
+parchDead=sqldf("select count(Parch) as num, Parch from data where Survived=0 group by Parch")
+parchDead
+totalParch=sqldf("select parchDead.num as dead,parchlive.num as live,ParchDead.Parch from parchDead left outer join parchLive on parchDead.Parch=parchLive.parch")
+totalParch
+barplot(t(data.frame(totalParch$dead,totalParch$live)),col=c(rgb(1,1,0,0.2),rgb(1,0,1,0.2)),beside=T)
+legend(
+  "topright",
+  c("dead","survived"),
+  fill=c(rgb(1,1,0,0.2),rgb(1,0,1,0.2))
+)
+title("Relationship between Parch and survived",xlab = " Parch num",ylab="count",ylim=0.99)
+box()
+#family size
+data$Fam=data$Parch+data$SibSp+1
+famLive=sqldf("select count(Fam) as num, Fam from data where Survived=1 group by Fam")
+famLive
+famDead=sqldf("select count(Fam) as num, Fam from data where Survived=0 group by Fam")
+famDead
+totalfam=sqldf("select famDead.num as dead,famlive.num as live,famDead.fam from famDead left outer join famLive on famDead.fam=famLive.fam")
+totalfam
+barplot(t(data.frame(totalfam$dead,totalfam$live)),col=c(rgb(1,1,0,0.2),rgb(1,0,1,0.2)),beside=T)
+legend(
+  "topright",
+  c("dead","survived"),
+  fill=c(rgb(1,1,0,0.2),rgb(1,0,1,0.2))
+)
+title("Relationship between fam and survived",xlab = " fam num",ylab="count",ylim=0.99)
+box()
+# ticket
